@@ -1,0 +1,28 @@
+
+- name: Clone Git repository and httpd Server
+  hosts: kings
+  become: true
+  vars:
+    apache_document_root: /var/www/html
+    git_repo_url: https://github.com/nihalreddy1916/food-app-nihal.git
+  tasks:
+    - name: Clone Git repository
+      git:
+        repo: https://github.com/nihalreddy1916/food-app-nihal.git
+        dest: /var/www/html/
+        update: yes  
+      register: git_clone_result
+    - name: install httpd
+      yum:
+        name: httpd
+        state: present
+    - name: start httpd
+      service: 
+        name: httpd
+        state: started
+        enabled: true
+    - name: restart httpd
+      service:
+        name: httpd
+        state: restarted
+
