@@ -1,32 +1,22 @@
 pipeline {
     agent any
-    parameters {
-        string(name: 'BRANCH_NAME', defaultValue: '', description: 'Enter the branch name (e.g., m, develop, feature)')
-        string(name: 'COMMIT_ID', defaultValue: '', description: 'Enter the commit ID starting with commit_id_start')
-    }
-    environment {
-        FINAL_BRANCH = "${params.BRANCH_NAME == 'm' ? 'master' : params.BRANCH_NAME}"
-        FINAL_COMMIT_ID = "${params.BRANCH_NAME == 'm' && !params.COMMIT_ID ? 'commit_id_start' : params.COMMIT_ID}"
-    }
+
     stages {
-        stage('Checkout') {
+        stage('List Branches') {
             steps {
                 script {
-                    // Print the final values
-                    echo "Branch selected: ${params.BRANCH_NAME}"
-                    echo "Using branch: ${env.FINAL_BRANCH}"
-                    echo "Using commit ID: ${env.FINAL_COMMIT_ID}"
-                    
-                    // Example git checkout
-                    checkout([$class: 'GitSCM', branches: [[name: "*/${env.FINAL_BRANCH}"]],
-                              doGenerateSubmoduleConfigurations: false,
-                              extensions: [[$class: 'CleanCheckout']],
-                              submoduleCfg: [],
-                              userRemoteConfigs: [[url: 'https://your-repository-url.git']]])
-                    
-                    // Reset to specific commit ID if provided
-                    if (env.FINAL_COMMIT_ID) {
-                        sh "git reset --hard ${env.FINAL_COMMIT_ID}"
+                    // Get the list of branches from Git
+                    def branches = sh(script: 'git ls-remote --heads origin', returnStdout: true).trim().split('\n')
+
+                    // Filter branches based on the search query
+                    def searchTerm = 'b' // Change this to your search query
+                    def filteredBranches = branches.findAll { it.contains(searchTerm) }
+
+                    // Print out the branches and commit IDs
+                    for (branch in filteredBranches) {
+                        def branchName = branch.tokenize('refs/heads/')[1].trim()
+                        def commitId = branch.tokenize('\t')[0].trim()
+                        echo "Branch: ${branchName}, Commit ID: ${commitId}"
                     }
                 }
             }
