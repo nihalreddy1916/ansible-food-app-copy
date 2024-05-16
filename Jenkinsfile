@@ -1,8 +1,8 @@
 pipeline {
     agent any
     parameters {
-        choice(name: 'BRANCH_NAME', choices: ['m', 'develop', 'feature'], description: 'Select branch')
-        string(name: 'COMMIT_ID', defaultValue: '', description: 'Enter the commit ID')
+        string(name: 'BRANCH_NAME', defaultValue: '', description: 'Enter the branch name (e.g., m, develop, feature)')
+        string(name: 'COMMIT_ID', defaultValue: '', description: 'Enter the commit ID starting with commit_id_start')
     }
     environment {
         FINAL_BRANCH = "${params.BRANCH_NAME == 'm' ? 'master' : params.BRANCH_NAME}"
@@ -12,12 +12,13 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
+                    // Print the final values
                     echo "Branch selected: ${params.BRANCH_NAME}"
                     echo "Using branch: ${env.FINAL_BRANCH}"
                     echo "Using commit ID: ${env.FINAL_COMMIT_ID}"
                     
                     // Example git checkout
-                    checkout([$class: 'GitSCM', branches: [[name: env.FINAL_BRANCH]],
+                    checkout([$class: 'GitSCM', branches: [[name: "*/${env.FINAL_BRANCH}"]],
                               doGenerateSubmoduleConfigurations: false,
                               extensions: [[$class: 'CleanCheckout']],
                               submoduleCfg: [],
