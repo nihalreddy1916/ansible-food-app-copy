@@ -1,25 +1,32 @@
 pipeline {
     agent any
-
+    
+    parameters {
+        string(name: 'COMMIT_REGEX', defaultValue: '', description: 'Regex to filter commit history (e.g., "^b" to match commits starting with "b")')
+    }
+    
     stages {
-        stage('List Branches') {
+        stage('Checkout') {
             steps {
-                script {
-                    // Get the list of branches from Git
-                    def branches = sh(script: 'git ls-remote --heads origin', returnStdout: true).trim().split('\n')
-
-                    // Filter branches based on the search query
-                    def searchTerm = 'b' // Change this to your search query
-                    def filteredBranches = branches.findAll { it.contains(searchTerm) }
-
-                    // Print out the branches and commit IDs
-                    for (branch in filteredBranches) {
-                        def branchName = branch.tokenize('refs/heads/')[1].trim()
-                        def commitId = branch.tokenize('\t')[0].trim()
-                        echo "Branch: ${branchName}, Commit ID: ${commitId}"
-                    }
-                }
+                checkout scm
             }
         }
-    }
+        
+        stage('Filter Commits') {
+            steps {
+                script {
+                    def commitRegex = params.COMMIT_REGEX
+                    sh """
+                        if [ -z "${commitRegex}" ]; then
+                            echo "No regex pattern provided. Displaying all commits."
+                            git log --pretty=format:'%h %s'
+                        else
+                            echo "Commit History Filtered by Regex: ${commitRegex}"
+                            git log --pretty=format:'%h %s' | grep -E '${commitRegex}'
+                        fi
+                    """
+                }
+            }
+        }
+    }
 }
